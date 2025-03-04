@@ -1,0 +1,27 @@
+/* Portal Section Styles */
+.portal {
+    padding: 5rem 5%;
+    background-color: var(--primary);
+    color: white;
+    text-align: center;
+  }
+  
+  .portal-title {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  
+  .portal-text {
+    max-width: 800px;
+    margin: 0 auto 2.5rem;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+  
+  .portal-buttons {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+  }
