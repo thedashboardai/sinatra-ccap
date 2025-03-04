@@ -1,0 +1,55 @@
+
+::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #66CAFF;
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #277eca;
+  }
+
+body {
+  font-family: 'Raleway', serif;
+  font-variant-numeric: lining-nums proportional-nums;
+}
+
+.loginWrapper {
+  display: flex;
+  height: 100vh;
+}
+
+.flexRow {
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+
+  * {
+    margin: 0;
+  }
+
+  @media screen and (max-width: 950px) {
+    flex-direction: column;
+  }
+
+}
+
+input {
+  background: #F3F4F7;
+  border-radius: 14px;
+  padding: 12px 13px;
+  border: none;
+  width: 100%;
+  outline: none;
+  font-size: 16px;
+}

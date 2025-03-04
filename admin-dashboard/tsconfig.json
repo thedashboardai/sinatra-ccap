@@ -1,0 +1,42 @@
+{
+    "compilerOptions": {
+        "module": "es2015",
+        "target": "es2015",
+        "noImplicitAny": false,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "outFile": "../../built/local/tsc.js",
+        "sourceMap": true,
+        "jsx": "react",
+        "moduleResolution": "node",
+        "outDir": "dist",
+        "allowJs": true,
+        "declaration": true,
+        "emitDeclarationOnly": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "noEmit": false,
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "lib": ["DOM", "ESNext", "ES2015"],
+        "strict": false,
+        "rootDir": "src",
+        "baseUrl": "./",
+        "paths": {
+        "react": [ "./node_modules/@types/react" ],
+        "@common/*": ["./src/dashboards/common/*"],
+        }
+    },
+    "include": [
+        "src/**/*",
+        "node_modules/@georgesinatra/**.ts"
+    ],
+    "exclude": [
+        "babel.config.js",
+        "metro.config.js",
+        "jest.config.js",
+        "node_modules/*",
+        "**/*.spec.ts",
+        "build"
+    ]
+}

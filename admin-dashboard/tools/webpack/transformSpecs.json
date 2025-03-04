@@ -1,0 +1,22 @@
+[
+  {
+    "componentName": "TText",
+    "replaceWith": "p",
+    "importFrom": "@sinatra_dev/PP",
+    "propsRegex": [
+      {
+        "match": "fontWeight: '500'",
+        "replace": "fontWeight: 500"
+      }
+    ]
+  },
+
+  {
+    "componentName": "TouchableOpacity",
+    "replaceWith": "TouchableOpacity",
+    "importFrom": "@sinatra_dev/TouchableOpacity",
+    "propsRegex": [
+
+    ]
+  }
+]
