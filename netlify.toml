@@ -1,0 +1,40 @@
+[build]
+  command = "npm run build:all"
+  publish = "dist"
+  functions = "netlify/functions"
+
+# Special redirect for the intake form
+[[redirects]]
+  from = "/intake"
+  to = "/admin/intake"
+  status = 200
+
+[[redirects]]
+  from = "/intake/*"
+  to = "/admin/intake/:splat"
+  status = 200
+
+# Routing rules for dashboards
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/student/*"
+  to = "/student/:splat"
+  status = 200
+
+# SPA fallback for React router in admin dashboard
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin/index.html"
+  status = 200
+  force = false
+
+# SPA fallback for React router in student dashboard
+[[redirects]]
+  from = "/student/*"
+  to = "/student/index.html"
+  status = 200
+  force = false
