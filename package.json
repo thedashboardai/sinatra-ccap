@@ -1,10 +1,14 @@
 {
     "name": "ccap-monorepo",
     "version": "1.0.0",
+    "private": true,
     "scripts": {
       "build:all": "npm run build:landing && npm run build:admin && npm run build:student",
       "build:landing": "mkdir -p dist && cp -r landing-page/* dist/",
       "build:admin": "cd admin-dashboard && cross-env NODE_ENV=production webpack --config tools/webpack/webpack.config.prod.js && mkdir -p ../dist/admin && cp -r dist/* ../dist/admin/",
-      "build:student": "cd student-dashboard && cross-env NODE_ENV=production webpack --config tools/webpack/webpack.config.prod.js && mkdir -p ../dist/student && cp -r dist/* ../dist/student/"
+      "build:student": "cd student-dashboard && npm run build && mkdir -p ../dist/student && cp -r build/* ../dist/student/"
+    },
+    "devDependencies": {
+      "cross-env": "^7.0.3"
     }
-  }
+}
