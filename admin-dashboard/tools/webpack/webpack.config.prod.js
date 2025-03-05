@@ -10,7 +10,7 @@ module.exports = {
         filename: '[name].[chunkhash].js',
         chunkFilename: '[name].[chunkhash].chunk.js',
         clean: true,
-        publicPath: '/'
+        publicPath: '/admin/'
     },
     plugins: [...require('./webpack.plugins'), 
                   new webpack.DefinePlugin({'process.env': JSON.stringify(process.env),

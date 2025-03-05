@@ -3,6 +3,22 @@
   publish = "dist"
   functions = "netlify/functions"
 
+# Direct routes with specific paths
+[[redirects]]
+  from = "/admin"
+  to = "/admin/login"
+  status = 302
+
+[[redirects]]
+  from = "/admin/login"
+  to = "/admin/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/student"
+  to = "/student/index.html"
+  status = 200
+
 # Special redirect for the intake form
 [[redirects]]
   from = "/intake"
@@ -14,14 +30,30 @@
   to = "/admin/intake/:splat"
   status = 200
 
-# SPA fallback for admin dashboard
+# Asset handling for images and other static files
+[[redirects]]
+  from = "/admin/assets/*"
+  to = "/admin/assets/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/student/images/*"
+  to = "/student/images/:splat"
+  status = 200
+
+# SPA fallbacks
 [[redirects]]
   from = "/admin/*"
   to = "/admin/index.html"
   status = 200
 
-# SPA fallback for student dashboard
 [[redirects]]
   from = "/student/*"
   to = "/student/index.html"
+  status = 200
+
+# Default fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
   status = 200
