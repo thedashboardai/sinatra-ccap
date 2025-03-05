@@ -14,27 +14,14 @@
   to = "/admin/intake/:splat"
   status = 200
 
-# Routing rules for dashboards
-[[redirects]]
-  from = "/admin/*"
-  to = "/admin/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/student/*"
-  to = "/student/:splat"
-  status = 200
-
-# SPA fallback for React router in admin dashboard
+# SPA fallback for admin dashboard
 [[redirects]]
   from = "/admin/*"
   to = "/admin/index.html"
   status = 200
-  force = false
 
-# SPA fallback for React router in student dashboard
+# SPA fallback for student dashboard
 [[redirects]]
   from = "/student/*"
   to = "/student/index.html"
   status = 200
-  force = false
