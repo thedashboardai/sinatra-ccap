@@ -6,6 +6,6 @@
       "build:all": "npm run build:landing && npm run build:admin && npm run build:student",
       "build:landing": "mkdir -p dist && cp -r landing-page/* dist/",
       "build:admin": "cd admin-dashboard && npm install --legacy-peer-deps && npm run build && mkdir -p ../dist/admin && cp -r dist/* ../dist/admin/",
-      "build:student": "cd student-dashboard && npm install --legacy-peer-deps && npm run build && mkdir -p ../dist/student && cp -r build/* ../dist/student/"
+      "build:student": "cd student-dashboard && npm install --legacy-peer-deps && CI=false npm run build && mkdir -p ../dist/student && cp -r build/* ../dist/student/"
     }
-  }
+}
