@@ -5,8 +5,11 @@
   "scripts": {
     "build:all": "if exist dist rmdir /s /q dist && mkdir dist && npm run build:landing && npm run build:admin && npm run build:student && npm run copy:netlify",
     "build:landing": "echo Building landing page... && xcopy /E /I /Y landing-page\\* dist\\",
-    "build:admin": "echo Building admin dashboard... && cd admin-dashboard && npm install --legacy-peer-deps && npm run build && mkdir ..\\dist\\admin && xcopy /E /I /Y dist\\* ..\\dist\\admin\\ && mkdir ..\\dist\\admin\\assets && xcopy /E /I /Y src\\assets\\* ..\\dist\\admin\\assets\\",
-    "build:student": "echo Building student dashboard... && cd student-dashboard && npm install --legacy-peer-deps && set CI=false && npm run build && mkdir ..\\dist\\student && xcopy /E /I /Y build\\* ..\\dist\\student\\ && mkdir ..\\dist\\student\\images && xcopy /E /I /Y public\\images\\* ..\\dist\\student\\images\\",
+    "build:admin": "echo Building admin dashboard... && cd admin-dashboard && npm install --legacy-peer-deps && npm run build && mkdir ..\\dist\\admin && xcopy /E /I /Y dist\\* ..\\dist\\admin\\ && if not exist ..\\dist\\admin\\assets mkdir ..\\dist\\admin\\assets && xcopy /E /I /Y src\\assets\\* ..\\dist\\admin\\assets\\",
+    "build:student": "echo Building student dashboard... && cd student-dashboard && npm install --legacy-peer-deps && cross-env CI=false npm run build && mkdir ..\\dist\\student && xcopy /E /I /Y build\\* ..\\dist\\student\\ && if not exist ..\\dist\\student\\images mkdir ..\\dist\\student\\images && xcopy /E /I /Y public\\images\\* ..\\dist\\student\\images\\",
     "copy:netlify": "echo Copying netlify.toml... && xcopy /Y netlify.toml dist\\"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
   }
 }
