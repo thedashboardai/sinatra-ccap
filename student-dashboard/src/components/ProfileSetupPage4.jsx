@@ -25,7 +25,7 @@ const ProfileSetupPage4 = ({ onBack, onSubmit }) => {
   const [pageData, setPageData] = useState({
     bio: '',
     profilePicture: null,
-    profilePicturePreview: '/images/profile-placeholder.jpg'
+    profilePicturePreview: '/student/images/profile-placeholder.jpg'
   });
 
   const [profilePictureDetails] = useState({
@@ -44,7 +44,7 @@ const ProfileSetupPage4 = ({ onBack, onSubmit }) => {
       setPageData({
         bio: profileData.bio || 'Lorem ipsum dolor sit amet consectetur. Consectetur suspendisse habitant ornare nulla semper mi a diam proin. Facilisis risus interdum vulputate in. Integer quis facilisis porttitor elementum ac quam nunc.',
         profilePicture: null,
-        profilePicturePreview: profileData.profile_picture_url || '/images/profile-placeholder.jpg'
+        profilePicturePreview: profileData.profile_picture_url || '/student/images/profile-placeholder.jpg'
       });
     }
   }, [profileData]);
@@ -75,7 +75,7 @@ const ProfileSetupPage4 = ({ onBack, onSubmit }) => {
     setPageData({
       ...pageData,
       profilePicture: null,
-      profilePicturePreview: '/images/profile-placeholder.jpg'
+      profilePicturePreview: '/student/images/profile-placeholder.jpg'
     });
   };
 
@@ -87,7 +87,7 @@ const ProfileSetupPage4 = ({ onBack, onSubmit }) => {
     // Update the global profile data with this page's data
     updateProfileData({
       bio: pageData.bio,
-      profile_picture_url: pageData.profilePicturePreview !== '/images/profile-placeholder.jpg' ? pageData.profilePicturePreview : null,
+      profile_picture_url: pageData.profilePicturePreview !== '/student/images/profile-placeholder.jpg' ? pageData.profilePicturePreview : null,
     });
     
     try {
@@ -162,7 +162,7 @@ const ProfileSetupPage4 = ({ onBack, onSubmit }) => {
           flexShrink: 0
         }}>
           <img
-            src="/images/avatar.png"
+            src="/student/images/avatar.png"
             alt="Avatar"
             style={{
               width: '100%',

@@ -145,7 +145,7 @@ const AddDishModal = ({ open, onClose, onAdd }) => {
         {/* User Info */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <Avatar
-            src="/images/profile-placeholder.jpg"
+            src="student/images/profile-placeholder.jpg"
             alt={getUserName()}
             sx={{ width: 32, height: 32, mr: 1.5 }}
           />

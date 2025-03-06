@@ -18,7 +18,7 @@ import {
 import { Close, MoreVert, Delete } from '@mui/icons-material';
 
 // Use local image for fallback
-const PLACEHOLDER_IMAGE = '/images/dishes/sushi1.jpg';
+const PLACEHOLDER_IMAGE = '/student/images/dishes/sushi1.jpg';
 
 const ViewDishModal = ({ open, onClose, dish, onDelete }) => {
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -125,7 +125,7 @@ const ViewDishModal = ({ open, onClose, dish, onDelete }) => {
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Avatar
-                src="/images/profile-placeholder.jpg"
+                src="/student/images/profile-placeholder.jpg"
                 alt={getUserName()}
                 sx={{ width: 40, height: 40, mr: 2 }}
               />

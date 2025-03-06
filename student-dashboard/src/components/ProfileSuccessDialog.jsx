@@ -37,7 +37,7 @@ const ProfileSuccessDialog = ({ open, onClose }) => {
           {/* Avatar with thumbs up - replace with your image */}
           <Box
             component="img"
-            src="/images/thumbs-up-avatar.png" // You'll need to add this image
+            src="/student/images/thumbs-up-avatar.png" // You'll need to add this image
             alt="Success"
             sx={{
               width: 150,

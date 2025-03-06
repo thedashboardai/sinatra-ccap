@@ -133,7 +133,7 @@ const ProfileSetupPage2 = ({ onBack, onNext }) => {
           flexShrink: 0
         }}>
           <img
-            src="/images/avatar.png"
+            src="/student/images/avatar.png"
             alt="Avatar"
             style={{
               width: '100%',

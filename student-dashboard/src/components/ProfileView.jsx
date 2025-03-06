@@ -106,7 +106,7 @@ const ProfileView = ({ onLogout }) => {
         {/* Background image */}
         <Box
           component="img"
-          src="/images/chef-kitchen-bg.jpg"
+          src="/student/images/chef-kitchen-bg.jpg"
           alt="Kitchen Background"
           sx={{
             width: '100%',
@@ -131,7 +131,7 @@ const ProfileView = ({ onLogout }) => {
           }}
         >
           <Avatar
-            src={profileData?.profile_picture_url || "/images/profile-placeholder.jpg"}
+            src={profileData?.profile_picture_url || "/student/images/profile-placeholder.jpg"}
             alt="Profile"
             sx={{
               width: '100%',

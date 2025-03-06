@@ -7,7 +7,7 @@ import ViewDishModal from './ViewDishModal';
 import { portfolioService } from '../services/api';
 
 // Placeholder image path - using one of the local dish images
-const PLACEHOLDER_IMAGE = '/images/dishes/salad1.jpg';
+const PLACEHOLDER_IMAGE = '/student/images/dishes/salad1.jpg';
 
 const CuisinePortfolio = () => {
   const [dishes, setDishes] = useState([]);
