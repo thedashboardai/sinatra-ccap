@@ -8,16 +8,20 @@ import {
   LinearProgress,
   InputAdornment,
   CircularProgress,
-  Alert
+  Alert,
+  FormHelperText
 } from '@mui/material';
 import {
   ArrowBack,
   LocationOn,
   CalendarToday,
   Phone,
-  KeyboardArrowDown
+  Person,
+  PersonOutline
 } from '@mui/icons-material';
 import { useProfile } from '../services/ProfileContext';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 
 const ProfileSetupPage = ({ onBack, onNext }) => {
   const { 
@@ -26,7 +30,8 @@ const ProfileSetupPage = ({ onBack, onNext }) => {
     fetchProfile, 
     loading, 
     error, 
-    isProfileFetched 
+    isProfileFetched,
+    validationErrors 
   } = useProfile();
   
   const [pageData, setPageData] = useState({
@@ -35,9 +40,11 @@ const ProfileSetupPage = ({ onBack, onNext }) => {
     preferredName: '',
     mailingAddress: '',
     willingToRelocate: null,
-    dateOfBirth: '',
+    dateOfBirth: null,
     phoneNumber: ''
   });
+
+  const [formErrors, setFormErrors] = useState({});
 
   // Fetch profile data when component mounts
   useEffect(() => {
@@ -55,17 +62,51 @@ const ProfileSetupPage = ({ onBack, onNext }) => {
         preferredName: profileData.preferred_name || '',
         mailingAddress: profileData.mailing_address || '',
         willingToRelocate: profileData.willing_to_relocate,
-        dateOfBirth: profileData.date_of_birth || '',
+        dateOfBirth: profileData.date_of_birth ? new Date(profileData.date_of_birth) : null,
         phoneNumber: profileData.phone_number || ''
       });
     }
   }, [profileData]);
+
+  // Update form errors when validation errors change
+  useEffect(() => {
+    setFormErrors({
+      firstName: validationErrors.first_name || '',
+      lastName: validationErrors.last_name || '',
+      mailingAddress: validationErrors.mailing_address || '',
+      dateOfBirth: validationErrors.date_of_birth || '',
+      phoneNumber: validationErrors.phone_number || ''
+    });
+  }, [validationErrors]);
 
   const handleChange = (field) => (event) => {
     setPageData({
       ...pageData,
       [field]: event.target.value
     });
+    
+    // Clear error when field is changed
+    if (formErrors[field]) {
+      setFormErrors({
+        ...formErrors,
+        [field]: ''
+      });
+    }
+  };
+
+  const handleDateChange = (date) => {
+    setPageData({
+      ...pageData,
+      dateOfBirth: date
+    });
+    
+    // Clear error when field is changed
+    if (formErrors.dateOfBirth) {
+      setFormErrors({
+        ...formErrors,
+        dateOfBirth: ''
+      });
+    }
   };
 
   const handleRelocateChoice = (choice) => {
@@ -75,19 +116,64 @@ const ProfileSetupPage = ({ onBack, onNext }) => {
     });
   };
 
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!pageData.firstName.trim()) {
+      errors.firstName = 'First name is required';
+    }
+    
+    if (!pageData.lastName.trim()) {
+      errors.lastName = 'Last name is required';
+    }
+    
+    if (!pageData.mailingAddress.trim()) {
+      errors.mailingAddress = 'Mailing address is required';
+    }
+    
+    if (!pageData.phoneNumber.trim()) {
+      errors.phoneNumber = 'Phone number is required';
+    } else {
+      // Basic phone number validation
+      const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+      if (!phoneRegex.test(pageData.phoneNumber.replace(/[^0-9+]/g, ''))) {
+        errors.phoneNumber = 'Please enter a valid phone number';
+      }
+    }
+    
+    if (pageData.dateOfBirth && isNaN(new Date(pageData.dateOfBirth).getTime())) {
+      errors.dateOfBirth = 'Please enter a valid date';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleNext = () => {
+    // Validate form first
+    if (!validateForm()) {
+      return;
+    }
+    
+    // Format date to ISO string if it exists
+    const formattedDate = pageData.dateOfBirth instanceof Date && !isNaN(pageData.dateOfBirth)
+      ? pageData.dateOfBirth.toISOString().split('T')[0]
+      : pageData.dateOfBirth;
+    
     // Update the global profile data with this page's data
-    updateProfileData({
+    const success = updateProfileData({
       first_name: pageData.firstName,
       last_name: pageData.lastName,
       preferred_name: pageData.preferredName,
       mailing_address: pageData.mailingAddress,
       willing_to_relocate: pageData.willingToRelocate,
-      date_of_birth: pageData.dateOfBirth,
+      date_of_birth: formattedDate,
       phone_number: pageData.phoneNumber
     });
     
-    onNext(); // Navigate to the next page
+    if (success) {
+      onNext(); // Navigate to the next page
+    }
   };
 
   if (loading && !isProfileFetched) {
@@ -212,13 +298,22 @@ const ProfileSetupPage = ({ onBack, onNext }) => {
         {/* First Name */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            First Name
+            First Name *
           </Typography>
           <TextField
             fullWidth
             value={pageData.firstName}
             onChange={handleChange('firstName')}
             variant="outlined"
+            error={!!formErrors.firstName}
+            helperText={formErrors.firstName}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Person sx={{ color: '#6b7c93' }} />
+                </InputAdornment>
+              ),
+            }}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
@@ -231,13 +326,22 @@ const ProfileSetupPage = ({ onBack, onNext }) => {
         {/* Last Name */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            Last Name
+            Last Name *
           </Typography>
           <TextField
             fullWidth
             value={pageData.lastName}
             onChange={handleChange('lastName')}
             variant="outlined"
+            error={!!formErrors.lastName}
+            helperText={formErrors.lastName}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Person sx={{ color: '#6b7c93' }} />
+                </InputAdornment>
+              ),
+            }}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
@@ -257,6 +361,13 @@ const ProfileSetupPage = ({ onBack, onNext }) => {
             value={pageData.preferredName}
             onChange={handleChange('preferredName')}
             variant="outlined"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <PersonOutline sx={{ color: '#6b7c93' }} />
+                </InputAdornment>
+              ),
+            }}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
@@ -269,13 +380,15 @@ const ProfileSetupPage = ({ onBack, onNext }) => {
         {/* Mailing Address */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            Mailing Address
+            Mailing Address *
           </Typography>
           <TextField
             fullWidth
             value={pageData.mailingAddress}
             onChange={handleChange('mailingAddress')}
             variant="outlined"
+            error={!!formErrors.mailingAddress}
+            helperText={formErrors.mailingAddress}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -295,7 +408,7 @@ const ProfileSetupPage = ({ onBack, onNext }) => {
         {/* Willing to Relocate */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            Are You Willing To Relocate?
+            Are You Willing To Relocate? *
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
@@ -338,44 +451,50 @@ const ProfileSetupPage = ({ onBack, onNext }) => {
         {/* Date of Birth */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            Date Of Birth
+            Date Of Birth *
           </Typography>
-          <TextField
-            fullWidth
-            value={pageData.dateOfBirth}
-            onChange={handleChange('dateOfBirth')}
-            variant="outlined"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <CalendarToday sx={{ color: '#6b7c93' }} />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <KeyboardArrowDown sx={{ color: '#6b7c93' }} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                bgcolor: '#fff',
-              }
-            }}
-          />
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DatePicker
+              value={pageData.dateOfBirth}
+              onChange={handleDateChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  fullWidth
+                  error={!!formErrors.dateOfBirth}
+                  helperText={formErrors.dateOfBirth}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <CalendarToday sx={{ color: '#6b7c93' }} />
+                      </InputAdornment>
+                    ),
+                    ...params.InputProps
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      bgcolor: '#fff',
+                    }
+                  }}
+                />
+              )}
+            />
+          </LocalizationProvider>
         </Box>
 
         {/* Mobile Phone Number */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            Mobile Phone Number
+            Mobile Phone Number *
           </Typography>
           <TextField
             fullWidth
             value={pageData.phoneNumber}
             onChange={handleChange('phoneNumber')}
             variant="outlined"
+            error={!!formErrors.phoneNumber}
+            helperText={formErrors.phoneNumber}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -391,6 +510,8 @@ const ProfileSetupPage = ({ onBack, onNext }) => {
             }}
           />
         </Box>
+        
+        <FormHelperText>* Required fields</FormHelperText>
       </Box>
 
       {/* Next button */}

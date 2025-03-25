@@ -27,14 +27,33 @@ import ProfileSetupPage4 from './ProfileSetupPage4';
 import ProfileSuccessDialog from './ProfileSuccessDialog';
 import ProfileView from './ProfileView';
 import ResetPasswordPage from './ResetPasswordPage';
-import { authService } from '../services/api'; // Import the authService
-import { ProfileProvider } from '../services/ProfileContext'; // Import the ProfileProvider
+import { authService } from '../services/api';
+import { ProfileProvider } from '../services/ProfileContext';
+import { styled } from '@mui/material/styles';
+
+// Custom styled TextField to remove blue highlight on autofill
+const StyledTextField = styled(TextField)({
+  '& .MuiOutlinedInput-root': {
+    '&.Mui-focused fieldset': {
+      borderColor: 'rgba(0,0,0,0.23)',
+      borderWidth: '1px',
+    },
+  },
+  '& .MuiInputBase-input': {
+    '&:-webkit-autofill': {
+      WebkitBoxShadow: '0 0 0 1000px white inset',
+      WebkitTextFillColor: '#000',
+      caretColor: '#000',
+      borderRadius: 28,
+    },
+  },
+});
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [currentPage, setCurrentPage] = useState('login'); // 'login', 'resetPassword', 'profile1', 'profile2', 'profile3', 'profile4', 'profileView'
+  const [currentPage, setCurrentPage] = useState('login');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,7 +61,6 @@ const LoginPage = () => {
   const [alertSeverity, setAlertSeverity] = useState('success');
   const [token, setToken] = useState('');
 
-  // All other functions and hooks remain the same...
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -59,9 +77,6 @@ const LoginPage = () => {
       // Use the authService for login
       const data = await authService.login(email, password);
       
-      // The login has been successful if we reach this point
-      // The token is already stored in localStorage by the authService
-      
       // Navigate to profile setup
       setCurrentPage('profile1');
       
@@ -75,6 +90,9 @@ const LoginPage = () => {
         setAlertMessage('Too many failed login attempts. Please try again later or reset your password.');
       } else if (error.response && error.response.data && error.response.data.message) {
         setAlertMessage(error.response.data.message);
+      } else if (error.code) {
+        // Firebase error
+        setAlertMessage(`Error: ${error.message}`);
       } else {
         setAlertMessage('Failed to login. Please try again later.');
       }
@@ -181,14 +199,15 @@ const LoginPage = () => {
             width: '100%',
             maxWidth: '390px',
             height: {
-              xs: '100%',
+              xs: 'auto', // Changed from fixed height to auto for better mobile
               sm: '844px' // iPhone 12 Pro Max height
             },
+            minHeight: { xs: '100vh', sm: '600px' }, // Minimum height to prevent content cutoff
             borderRadius: {
               xs: 0,
               sm: 3
             },
-            overflow: 'hidden',
+            overflow: 'auto', // Changed from hidden to auto to allow scrolling on small screens
             bgcolor: '#e8f4fc',
             display: 'flex',
             flexDirection: 'column',
@@ -196,7 +215,8 @@ const LoginPage = () => {
               xs: 'none',
               sm: '0 25px 50px -12px rgba(0,0,0,0.25), 0 0 1px rgba(0,0,0,0.1)'
             },
-            position: 'relative'
+            position: 'relative',
+            m: { xs: 0, sm: 2 } // Add margin on larger screens, none on mobile
           }}
         >
           {/* Login Form */}
@@ -210,10 +230,10 @@ const LoginPage = () => {
                 flexDirection: 'column',
                 height: '100%',
                 width: '100%',
-                position: 'absolute'
+                position: 'absolute',
+                boxSizing: 'border-box'
               }}
             >
-            {/* Login form content - remains the same */}
             {/* Header with back button */}
             <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
               <IconButton
@@ -242,12 +262,15 @@ const LoginPage = () => {
               display: 'flex', 
               mt: 3,
               mb: 4,
-              alignItems: 'flex-start'
+              alignItems: 'flex-start',
+              flexDirection: { xs: 'column', sm: 'row' }, // Stack vertically on mobile
+              gap: { xs: 2, sm: 0 } // Add gap for mobile
             }}>
               <Box sx={{ 
                 width: '80px', 
                 height: '80px',
-                flexShrink: 0
+                flexShrink: 0,
+                alignSelf: { xs: 'center', sm: 'flex-start' } // Center on mobile
               }}>
                 <img
                   src="student/images/avatar.png"
@@ -260,11 +283,12 @@ const LoginPage = () => {
                 />
               </Box>
               <Box sx={{
-                ml: 2,
+                ml: { xs: 0, sm: 2 }, // No left margin on mobile
                 p: 3,
                 bgcolor: '#fff',
                 borderRadius: 4,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                width: { xs: '100%', sm: 'auto' } // Full width on mobile
               }}>
                 <Typography 
                   variant="body1" 
@@ -290,7 +314,7 @@ const LoginPage = () => {
             >
               Email Address
             </Typography>
-            <TextField
+            <StyledTextField
               fullWidth
               id="email"
               placeholder="youremail@gmail.com"
@@ -317,6 +341,10 @@ const LoginPage = () => {
                   '&:hover fieldset': {
                     borderColor: 'rgba(0,0,0,0.2)',
                   },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'rgba(0,0,0,0.23)',
+                    borderWidth: '1px',
+                  },
                 },
                 '& .MuiInputBase-input': {
                   pl: 0
@@ -336,7 +364,7 @@ const LoginPage = () => {
             >
               Password
             </Typography>
-            <TextField
+            <StyledTextField
               fullWidth
               name="password"
               type={showPassword ? 'text' : 'password'}
@@ -374,6 +402,10 @@ const LoginPage = () => {
                   },
                   '&:hover fieldset': {
                     borderColor: 'rgba(0,0,0,0.2)',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'rgba(0,0,0,0.23)',
+                    borderWidth: '1px',
                   },
                 },
                 '& .MuiInputBase-input': {

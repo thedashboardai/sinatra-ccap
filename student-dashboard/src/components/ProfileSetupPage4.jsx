@@ -10,12 +10,14 @@ import {
   Paper,
   CircularProgress,
   Snackbar,
-  Alert
+  Alert,
+  FormHelperText
 } from '@mui/material';
 import {
   ArrowBack,
   ArrowForward,
   DeleteOutline,
+  PhotoCamera
 } from '@mui/icons-material';
 import { useProfile } from '../services/ProfileContext';
 
@@ -28,21 +30,22 @@ const ProfileSetupPage4 = ({ onBack, onSubmit }) => {
     profilePicturePreview: '/student/images/profile-placeholder.jpg'
   });
 
-  const [profilePictureDetails] = useState({
+  const [profilePictureDetails, setProfilePictureDetails] = useState({
     name: 'profilepicture.png',
-    date: '10/06/2023',
-    size: '321 KB'
+    date: new Date().toLocaleDateString(),
+    size: '0 KB'
   });
 
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [alertSeverity, setAlertSeverity] = useState('success');
+  const [formErrors, setFormErrors] = useState({});
 
   // Update local state when profileData changes
   useEffect(() => {
     if (profileData) {
       setPageData({
-        bio: profileData.bio || 'Lorem ipsum dolor sit amet consectetur. Consectetur suspendisse habitant ornare nulla semper mi a diam proin. Facilisis risus interdum vulputate in. Integer quis facilisis porttitor elementum ac quam nunc.',
+        bio: profileData.bio || 'Passionate about creating unforgettable dining experiences, I bring artistry and precision to every dish I craft. With a love for fresh, high-quality ingredients and a deep understanding of flavor balance, I specialize in elevating traditional recipes with modern techniques. My kitchen is my canvas, where I blend innovation with culinary heritage to delight the senses. Whether it’s crafting delicate sushi rolls, vibrant salads, or perfectly grilled seafood, I believe that every plate tells a story. Follow my journey through flavors and textures as I bring the finest culinary experiences to your table.',
         profilePicture: null,
         profilePicturePreview: profileData.profile_picture_url || '/student/images/profile-placeholder.jpg'
       });
@@ -54,14 +57,45 @@ const ProfileSetupPage4 = ({ onBack, onSubmit }) => {
       ...pageData,
       [field]: event.target.value
     });
+
+    // Clear error when field is changed
+    if (formErrors[field]) {
+      setFormErrors({
+        ...formErrors,
+        [field]: ''
+      });
+    }
   };
 
   const handleFileUpload = (event) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       
+      // Validate file type
+      if (!file.type.match('image.*')) {
+        setAlertMessage('Please select an image file (jpeg, png, etc.)');
+        setAlertSeverity('error');
+        setAlertOpen(true);
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setAlertMessage('Image is too large. Maximum size is 5MB.');
+        setAlertSeverity('error');
+        setAlertOpen(true);
+        return;
+      }
+      
       // Create a preview URL
       const previewUrl = URL.createObjectURL(file);
+      
+      // Update file details
+      setProfilePictureDetails({
+        name: file.name,
+        date: new Date().toLocaleDateString(),
+        size: `${Math.round(file.size / 1024)} KB`
+      });
       
       setPageData({
         ...pageData,
@@ -77,13 +111,37 @@ const ProfileSetupPage4 = ({ onBack, onSubmit }) => {
       profilePicture: null,
       profilePicturePreview: '/student/images/profile-placeholder.jpg'
     });
+    
+    setProfilePictureDetails({
+      name: 'profilepicture.png',
+      date: new Date().toLocaleDateString(),
+      size: '0 KB'
+    });
   };
 
   const handleCloseAlert = () => {
     setAlertOpen(false);
   };
 
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!pageData.bio.trim()) {
+      errors.bio = 'Bio is required';
+    } else if (pageData.bio.trim().length < 50) {
+      errors.bio = 'Bio should be at least 50 characters';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmitProfile = async () => {
+    // Validate form first
+    if (!validateForm()) {
+      return;
+    }
+    
     // Update the global profile data with this page's data
     updateProfileData({
       bio: pageData.bio,
@@ -92,9 +150,15 @@ const ProfileSetupPage4 = ({ onBack, onSubmit }) => {
     
     try {
       // Save all profile data to the server
-      await saveProfile();
-      // Call the onSubmit prop to show success dialog
-      onSubmit();
+      const success = await saveProfile();
+      if (success) {
+        // Call the onSubmit prop to show success dialog
+        onSubmit();
+      } else {
+        setAlertMessage('Please fix validation errors and try again.');
+        setAlertSeverity('error');
+        setAlertOpen(true);
+      }
     } catch (err) {
       setAlertMessage('Failed to save profile. Please try again.');
       setAlertSeverity('error');
@@ -198,6 +262,53 @@ const ProfileSetupPage4 = ({ onBack, onSubmit }) => {
             Profile Picture
           </Typography>
           
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            mb: 2 
+          }}>
+            <Box 
+              sx={{ 
+                position: 'relative', 
+                mb: 2,
+                width: 120,
+                height: 120
+              }}
+            >
+              <Avatar
+                src={pageData.profilePicturePreview}
+                alt="Profile"
+                sx={{ 
+                  width: '100%', 
+                  height: '100%'
+                }}
+              />
+              <IconButton
+                sx={{
+                  position: 'absolute',
+                  right: -10,
+                  bottom: -5,
+                  bgcolor: '#e3f2fd',
+                  color: '#42a5f5',
+                  '&:hover': {
+                    bgcolor: '#bbdefb'
+                  },
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                }}
+                component="label"
+              >
+                <PhotoCamera />
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                />
+              </IconButton>
+            </Box>
+          </Box>
+          
           <Paper
             elevation={0}
             sx={{
@@ -208,16 +319,6 @@ const ProfileSetupPage4 = ({ onBack, onSubmit }) => {
               alignItems: 'center',
             }}
           >
-            <Avatar
-              src={pageData.profilePicturePreview}
-              alt="Profile"
-              sx={{ 
-                width: 50, 
-                height: 50,
-                mr: 2
-              }}
-            />
-            
             <Box sx={{ flexGrow: 1 }}>
               <Typography variant="body2" sx={{ fontWeight: 500, color: '#333' }}>
                 {profilePictureDetails.name}
@@ -241,40 +342,12 @@ const ProfileSetupPage4 = ({ onBack, onSubmit }) => {
               <DeleteOutline />
             </IconButton>
           </Paper>
-          
-          {/* Hidden file input */}
-          <input
-            accept="image/*"
-            type="file"
-            id="profile-picture-upload"
-            style={{ display: 'none' }}
-            onChange={handleFileUpload}
-          />
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-            <Button
-              variant="outlined"
-              component="label"
-              htmlFor="profile-picture-upload"
-              sx={{
-                mt: 1,
-                mb: 2,
-                color: '#42a5f5',
-                borderColor: '#42a5f5',
-                '&:hover': {
-                  bgcolor: 'rgba(33, 150, 243, 0.04)',
-                  borderColor: '#42a5f5',
-                },
-              }}
-            >
-              Change Picture
-            </Button>
-          </Box>
         </Box>
 
         {/* Bio */}
         <Box>
           <Typography variant="body2" sx={{ mb: 1, color: '#6b7c93' }}>
-            Bio
+            Bio *
           </Typography>
           <TextField
             fullWidth
@@ -283,6 +356,9 @@ const ProfileSetupPage4 = ({ onBack, onSubmit }) => {
             value={pageData.bio}
             onChange={handleChange('bio')}
             variant="outlined"
+            placeholder="Tell us about yourself, your culinary background, and your interests..."
+            error={!!formErrors.bio}
+            helperText={formErrors.bio}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
@@ -291,6 +367,8 @@ const ProfileSetupPage4 = ({ onBack, onSubmit }) => {
             }}
           />
         </Box>
+        
+        <FormHelperText>* Required fields</FormHelperText>
       </Box>
 
       {/* Navigation buttons */}

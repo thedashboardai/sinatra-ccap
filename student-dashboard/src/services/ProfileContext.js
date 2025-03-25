@@ -4,6 +4,19 @@ import { profileService, portfolioService } from './api';
 // Create context
 const ProfileContext = createContext();
 
+// Map of work preference UUIDs to readable values
+const WORK_PREFERENCE_MAP = {
+  '95391dde-8139-4fdd-b515-33aba697b302': 'Morning (6AM - 10AM)',
+  'a0d0083f-8cc7-4f30-888a-beb24304659a': 'Afternoon (10AM - 2PM)',
+  '02d2b352-7fe9-47e5-aa8f-766031faf3c4': 'Evening (2PM - 6PM)'
+};
+
+// Map of job interest UUIDs to readable values
+const JOB_INTEREST_MAP = {
+  'df832319-251b-4f01-968c-4bc4028cf126': 'Culinary',
+  '9e4ad21c-1863-4a66-8ded-fed975b6c3d9': 'Baking and Pastry'
+};
+
 // Profile provider component
 export const ProfileProvider = ({ children }) => {
   const [profileData, setProfileData] = useState({
@@ -17,12 +30,15 @@ export const ProfileProvider = ({ children }) => {
     state: '',
     zip_code: '',
     phone_number: '',
+    date_of_birth: '',
     high_school: '',
     graduation_year: '',
     willing_to_relocate: false,
     relocation_states: [],
     hours_per_week: 40,
     work_preference: [],
+    work_preference_readable: [],
+    available_weekends: false,
     current_job: false,
     current_employer: '',
     current_position: '',
@@ -34,11 +50,16 @@ export const ProfileProvider = ({ children }) => {
     has_resume: false,
     resume_url: '',
     ready_to_work: true,
+    start_date: '',
     food_handlers_card: false,
     food_handlers_card_url: null,
     servsafe_credential: false,
     culinary_class_years: 0,
-    job_interests: []
+    job_interests: [],
+    job_interests_readable: [],
+    bio: 'Passionate about creating unforgettable dining experiences, I bring artistry and precision to every dish I craft. With a love for fresh, high-quality ingredients and a deep understanding of flavor balance, I specialize in elevating traditional recipes with modern techniques. My kitchen is my canvas, where I blend innovation with culinary heritage to delight the senses. Whether it’s crafting delicate sushi rolls, vibrant salads, or perfectly grilled seafood, I believe that every plate tells a story. Follow my journey through flavors and textures as I bring the finest culinary experiences to your table.',
+    profile_picture_url: '',
+    transportation: 'drive'
   });
   
   const [portfolioData, setPortfolioData] = useState([]);
@@ -46,6 +67,7 @@ export const ProfileProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [isProfileFetched, setIsProfileFetched] = useState(false);
   const [isPortfolioFetched, setIsPortfolioFetched] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
 
   // Fetch profile data
   const fetchProfile = async () => {
@@ -55,10 +77,31 @@ export const ProfileProvider = ({ children }) => {
     try {
       const data = await profileService.getProfile();
       console.log("Fetched profile data:", data);
+      
+      // Map work preferences from UUIDs to readable values
+      const workPreferenceReadable = Array.isArray(data.work_preference) 
+        ? data.work_preference.map(uuid => WORK_PREFERENCE_MAP[uuid] || uuid)
+        : [];
+        
+      // Map job interests from UUIDs to readable values
+      const jobInterestsReadable = Array.isArray(data.job_interests)
+        ? data.job_interests.map(uuid => JOB_INTEREST_MAP[uuid] || uuid)
+        : [];
+        
       setProfileData(prevData => ({
         ...prevData,
-        ...data
+        ...data,
+        work_preference_readable: workPreferenceReadable,
+        job_interests_readable: jobInterestsReadable,
+        // Format date fields properly if they exist
+        date_of_birth: data.date_of_birth || '',
+        start_date: data.start_date || '',
+        // Set transportation based on existing data or default to 'drive'
+        transportation: data.transportation || 'drive',
+        // Ensure available_weekends is a boolean
+        available_weekends: !!data.available_weekends
       }));
+      
       setIsProfileFetched(true);
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -86,12 +129,59 @@ export const ProfileProvider = ({ children }) => {
     }
   };
 
+  // Validate profile data
+  const validateProfile = (data) => {
+    const errors = {};
+    
+    // Required fields validation
+    if (!data.first_name) errors.first_name = "First name is required";
+    if (!data.last_name) errors.last_name = "Last name is required";
+    if (!data.mailing_address) errors.mailing_address = "Mailing address is required";
+    if (!data.phone_number) errors.phone_number = "Phone number is required";
+    
+    // Phone number format validation
+    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+    if (data.phone_number && !phoneRegex.test(data.phone_number.replace(/[^0-9+]/g, ''))) {
+      errors.phone_number = "Please enter a valid phone number";
+    }
+    
+    // Date validation
+    if (data.date_of_birth) {
+      const dobDate = new Date(data.date_of_birth);
+      if (isNaN(dobDate.getTime())) {
+        errors.date_of_birth = "Please enter a valid date";
+      }
+    }
+    
+    // Numeric validations
+    if (data.graduation_year && (isNaN(data.graduation_year) || data.graduation_year < 0)) {
+      errors.graduation_year = "Please enter a valid graduation year";
+    }
+    
+    if (data.hours_per_week && (isNaN(data.hours_per_week) || data.hours_per_week < 0)) {
+      errors.hours_per_week = "Please enter a valid number of hours";
+    }
+    
+    if (data.culinary_class_years && (isNaN(data.culinary_class_years) || data.culinary_class_years < 0)) {
+      errors.culinary_class_years = "Please enter a valid number of years";
+    }
+    
+    return errors;
+  };
+
   // Update profile data (local state only)
   const updateProfileData = (newData) => {
-    setProfileData(prevData => ({
-      ...prevData,
+    const updatedData = {
+      ...profileData,
       ...newData
-    }));
+    };
+    
+    // Validate the updated data
+    const errors = validateProfile(updatedData);
+    setValidationErrors(errors);
+    
+    setProfileData(updatedData);
+    return Object.keys(errors).length === 0;
   };
 
   // Update portfolio data (local state only)
@@ -104,10 +194,27 @@ export const ProfileProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     
+    // Validate before saving
+    const errors = validateProfile(profileData);
+    setValidationErrors(errors);
+    
+    if (Object.keys(errors).length > 0) {
+      setError("Please fix the validation errors before saving");
+      setLoading(false);
+      return false;
+    }
+    
     try {
-      const result = await profileService.updateProfile(profileData);
+      // Prepare data for API - convert readable values back to UUIDs if needed
+      const apiData = { ...profileData };
+      
+      // Remove the readable fields that shouldn't be sent to the API
+      delete apiData.work_preference_readable;
+      delete apiData.job_interests_readable;
+      
+      const result = await profileService.updateProfile(apiData);
       console.log("Profile update result:", result);
-      return result;
+      return true;
     } catch (err) {
       console.error("Error updating profile:", err);
       setError("Failed to save profile data");
@@ -223,7 +330,10 @@ export const ProfileProvider = ({ children }) => {
     deletePortfolioItem,
     uploadPortfolioImage,
     isProfileFetched,
-    isPortfolioFetched
+    isPortfolioFetched,
+    validationErrors,
+    workPreferenceMap: WORK_PREFERENCE_MAP,
+    jobInterestMap: JOB_INTEREST_MAP
   };
 
   return (

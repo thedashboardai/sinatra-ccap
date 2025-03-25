@@ -10,17 +10,30 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
-  CircularProgress
+  CircularProgress,
+  FormHelperText,
+  Select,
+  MenuItem
 } from '@mui/material';
 import {
   KeyboardArrowDown,
   ArrowBack,
-  ArrowForward
+  ArrowForward,
+  School,
+  CalendarToday,
+  DirectionsCar
 } from '@mui/icons-material';
 import { useProfile } from '../services/ProfileContext';
 
+// Available time options
+const TIME_OPTIONS = [
+  { value: 'Morning (6AM - 10AM)', label: 'Morning (6AM - 10AM)' },
+  { value: 'Afternoon (10AM - 2PM)', label: 'Afternoon (10AM - 2PM)' },
+  { value: 'Evening (2PM - 6PM)', label: 'Evening (2PM - 6PM)' }
+];
+
 const ProfileSetupPage2 = ({ onBack, onNext }) => {
-  const { profileData, updateProfileData, loading } = useProfile();
+  const { profileData, updateProfileData, loading, validationErrors, workPreferenceMap } = useProfile();
   
   const [pageData, setPageData] = useState({
     school: '',
@@ -31,25 +44,52 @@ const ProfileSetupPage2 = ({ onBack, onNext }) => {
     availableWeekends: null
   });
 
+  const [formErrors, setFormErrors] = useState({});
+
   // Update local state when profileData changes
   useEffect(() => {
     if (profileData) {
+      // Convert work_preference UUIDs to readable values
+      let timeAvailable = '';
+      
+      if (Array.isArray(profileData.work_preference) && profileData.work_preference.length > 0) {
+        const workPrefId = profileData.work_preference[0];
+        timeAvailable = workPreferenceMap[workPrefId] || profileData.work_preference_readable[0] || '';
+      }
+      
       setPageData({
         school: profileData.high_school || '',
-        graduationYear: profileData.graduation_year || '',
+        graduationYear: profileData.graduation_year ? profileData.graduation_year.toString() : '',
         transportation: profileData.transportation || 'drive',
-        hoursPerWeek: profileData.hours_per_week?.toString() || '40',
-        timeAvailable: profileData.work_preference ? profileData.work_preference[0] : 'Morning(6 AM - 10 AM)',
+        hoursPerWeek: profileData.hours_per_week ? profileData.hours_per_week.toString() : '40',
+        timeAvailable: timeAvailable,
         availableWeekends: profileData.available_weekends
       });
     }
-  }, [profileData]);
+  }, [profileData, workPreferenceMap]);
+
+  // Update form errors when validation errors change
+  useEffect(() => {
+    setFormErrors({
+      school: validationErrors.high_school || '',
+      graduationYear: validationErrors.graduation_year || '',
+      hoursPerWeek: validationErrors.hours_per_week || ''
+    });
+  }, [validationErrors]);
 
   const handleChange = (field) => (event) => {
     setPageData({
       ...pageData,
       [field]: event.target.value
     });
+    
+    // Clear error when field is changed
+    if (formErrors[field]) {
+      setFormErrors({
+        ...formErrors,
+        [field]: ''
+      });
+    }
   };
 
   const handleWeekendChoice = (choice) => {
@@ -59,18 +99,67 @@ const ProfileSetupPage2 = ({ onBack, onNext }) => {
     });
   };
 
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!pageData.school.trim()) {
+      errors.school = 'School name is required';
+    }
+    
+    if (!pageData.graduationYear.trim()) {
+      errors.graduationYear = 'Graduation year is required';
+    } else if (isNaN(pageData.graduationYear) || parseInt(pageData.graduationYear) < 0) {
+      errors.graduationYear = 'Please enter a valid graduation year';
+    }
+    
+    if (!pageData.hoursPerWeek.trim()) {
+      errors.hoursPerWeek = 'Hours per week is required';
+    } else if (isNaN(pageData.hoursPerWeek) || parseInt(pageData.hoursPerWeek) < 0) {
+      errors.hoursPerWeek = 'Please enter a valid number of hours';
+    }
+    
+    if (!pageData.timeAvailable) {
+      errors.timeAvailable = 'Please select your availability';
+    }
+    
+    if (pageData.availableWeekends === null) {
+      errors.availableWeekends = 'Please select your weekend availability';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleNext = () => {
+    // Validate form first
+    if (!validateForm()) {
+      return;
+    }
+    
+    // Find the UUID that corresponds to the selected time preference
+    let workPreferenceUUID = Object.keys(workPreferenceMap).find(
+      key => workPreferenceMap[key] === pageData.timeAvailable
+    );
+    
+    // If no UUID found (perhaps user entered custom text), use the text directly
+    if (!workPreferenceUUID) {
+      workPreferenceUUID = pageData.timeAvailable;
+    }
+    
     // Update global profile data
-    updateProfileData({
+    const success = updateProfileData({
       high_school: pageData.school,
-      graduation_year: pageData.graduationYear,
+      graduation_year: parseInt(pageData.graduationYear),
       transportation: pageData.transportation,
-      hours_per_week: parseInt(pageData.hoursPerWeek) || 40,
-      work_preference: [pageData.timeAvailable],
+      hours_per_week: parseInt(pageData.hoursPerWeek),
+      work_preference: [workPreferenceUUID],
+      work_preference_readable: [pageData.timeAvailable],
       available_weekends: pageData.availableWeekends
     });
     
-    onNext();
+    if (success) {
+      onNext();
+    }
   };
 
   return (
@@ -166,13 +255,22 @@ const ProfileSetupPage2 = ({ onBack, onNext }) => {
         {/* School */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            High School Or College Where Culinary Classes Were Taken
+            High School Or College Where Culinary Classes Were Taken *
           </Typography>
           <TextField
             fullWidth
             value={pageData.school}
             onChange={handleChange('school')}
             variant="outlined"
+            error={!!formErrors.school}
+            helperText={formErrors.school}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <School sx={{ color: '#6b7c93' }} />
+                </InputAdornment>
+              ),
+            }}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
@@ -185,13 +283,22 @@ const ProfileSetupPage2 = ({ onBack, onNext }) => {
         {/* Graduation Year */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            What Is Your Year Of Graduation?
+            What Is Your Year Of Graduation? *
           </Typography>
           <TextField
             fullWidth
             value={pageData.graduationYear}
             onChange={handleChange('graduationYear')}
             variant="outlined"
+            error={!!formErrors.graduationYear}
+            helperText={formErrors.graduationYear}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <CalendarToday sx={{ color: '#6b7c93' }} />
+                </InputAdornment>
+              ),
+            }}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
@@ -204,7 +311,7 @@ const ProfileSetupPage2 = ({ onBack, onNext }) => {
         {/* Transportation */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            How Will You Get To Work?
+            How Will You Get To Work? *
           </Typography>
           <FormControl component="fieldset" fullWidth>
             <RadioGroup
@@ -222,6 +329,7 @@ const ProfileSetupPage2 = ({ onBack, onNext }) => {
                     fullWidth
                     variant={pageData.transportation === 'drive' ? "contained" : "outlined"}
                     onClick={() => setPageData({...pageData, transportation: 'drive'})}
+                    startIcon={<DirectionsCar />}
                     sx={{
                       borderRadius: 2,
                       py: 1.5,
@@ -305,17 +413,20 @@ const ProfileSetupPage2 = ({ onBack, onNext }) => {
         {/* Hours per week */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            How Many Hours Do You Want To Work Per Week?
+            How Many Hours Do You Want To Work Per Week? *
           </Typography>
           <TextField
             fullWidth
             value={pageData.hoursPerWeek}
             onChange={handleChange('hoursPerWeek')}
             variant="outlined"
+            type="number"
+            error={!!formErrors.hoursPerWeek}
+            helperText={formErrors.hoursPerWeek}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <KeyboardArrowDown sx={{ color: '#6b7c93' }} />
+                  hours
                 </InputAdornment>
               ),
             }}
@@ -331,33 +442,38 @@ const ProfileSetupPage2 = ({ onBack, onNext }) => {
         {/* Time available */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            What Time Of The Day Are You Available To Work?
+            What Time Of The Day Are You Available To Work? *
           </Typography>
-          <TextField
-            fullWidth
-            value={pageData.timeAvailable}
-            onChange={handleChange('timeAvailable')}
-            variant="outlined"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <KeyboardArrowDown sx={{ color: '#6b7c93' }} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                bgcolor: '#fff',
-              }
-            }}
-          />
+          <FormControl fullWidth error={!!formErrors.timeAvailable}>
+            <Select
+              value={pageData.timeAvailable}
+              onChange={handleChange('timeAvailable')}
+              displayEmpty
+              renderValue={(selected) => selected || "Select a time"}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  bgcolor: '#fff',
+                },
+              }}
+              IconComponent={KeyboardArrowDown}
+            >
+              {TIME_OPTIONS.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+            {formErrors.timeAvailable && (
+              <FormHelperText>{formErrors.timeAvailable}</FormHelperText>
+            )}
+          </FormControl>
         </Box>
 
         {/* Weekend availability */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            Are You Available To Work During The Weekends?
+            Are You Available To Work During The Weekends? *
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
@@ -395,7 +511,12 @@ const ProfileSetupPage2 = ({ onBack, onNext }) => {
               No
             </Button>
           </Box>
+          {formErrors.availableWeekends && (
+            <FormHelperText error>{formErrors.availableWeekends}</FormHelperText>
+          )}
         </Box>
+        
+        <FormHelperText>* Required fields</FormHelperText>
       </Box>
 
       {/* Navigation buttons */}

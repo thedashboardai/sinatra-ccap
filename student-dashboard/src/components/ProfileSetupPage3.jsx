@@ -9,7 +9,9 @@ import {
   Paper,
   Divider,
   CircularProgress,
-  Alert
+  Alert,
+  FormHelperText,
+  FormControl
 } from '@mui/material';
 import {
   KeyboardArrowDown,
@@ -18,12 +20,15 @@ import {
   Business,
   Work,
   AccessTime,
-  FileCopy
+  FileCopy,
+  DateRange
 } from '@mui/icons-material';
 import { useProfile } from '../services/ProfileContext';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 
 const ProfileSetupPage3 = ({ onBack, onNext }) => {
-  const { profileData, updateProfileData, loading, error } = useProfile();
+  const { profileData, updateProfileData, loading, error, validationErrors, jobInterestMap } = useProfile();
   
   const [pageData, setPageData] = useState({
     hasJob: null,
@@ -32,6 +37,7 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
     workHours: '',
     hasResume: null,
     readyToWork: null,
+    startDate: null,
     interests: [],
     hasFoodHandlersCard: null,
     culinarySchoolYears: '',
@@ -41,19 +47,38 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
     foodHandlersCardUrl: null
   });
 
+  const [formErrors, setFormErrors] = useState({});
+
+  // Culinary and Baking/Pastry options with their UUIDs
+  const JOB_INTEREST_OPTIONS = {
+    'Culinary': 'df832319-251b-4f01-968c-4bc4028cf126',
+    'Baking and Pastry': '9e4ad21c-1863-4a66-8ded-fed975b6c3d9'
+  };
+
   // Update local state when profileData changes
   useEffect(() => {
     if (profileData) {
+      // Convert job interests from UUIDs to readable values
+      let interestsArray = [];
+      
+      if (Array.isArray(profileData.job_interests)) {
+        // Map UUIDs to readable values or keep as-is if not found in map
+        interestsArray = profileData.job_interests.map(
+          uuid => Object.keys(JOB_INTEREST_OPTIONS).find(key => JOB_INTEREST_OPTIONS[key] === uuid) || uuid
+        );
+      }
+      
       setPageData({
         hasJob: profileData.current_job,
         workplace: profileData.current_employer || '',
         position: profileData.current_position || '',
-        workHours: profileData.current_work_hours?.toString() || '0',
+        workHours: profileData.current_work_hours ? profileData.current_work_hours.toString() : '',
         hasResume: profileData.has_resume,
         readyToWork: profileData.ready_to_work,
-        interests: profileData.job_interests || [],
+        startDate: profileData.start_date ? new Date(profileData.start_date) : null,
+        interests: interestsArray,
         hasFoodHandlersCard: profileData.food_handlers_card,
-        culinarySchoolYears: profileData.culinary_class_years?.toString() || '',
+        culinarySchoolYears: profileData.culinary_class_years ? profileData.culinary_class_years.toString() : '',
         resumeFile: null,
         resumeUrl: profileData.resume_url || '',
         foodHandlersCardFile: null,
@@ -62,10 +87,33 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
     }
   }, [profileData]);
 
+  // Update form errors when validation errors change
+  useEffect(() => {
+    setFormErrors({
+      workHours: validationErrors.current_work_hours || '',
+      culinarySchoolYears: validationErrors.culinary_class_years || ''
+    });
+  }, [validationErrors]);
+
   const handleChange = (field) => (event) => {
     setPageData({
       ...pageData,
       [field]: event.target.value
+    });
+    
+    // Clear error when field is changed
+    if (formErrors[field]) {
+      setFormErrors({
+        ...formErrors,
+        [field]: ''
+      });
+    }
+  };
+
+  const handleDateChange = (date) => {
+    setPageData({
+      ...pageData,
+      startDate: date
     });
   };
 
@@ -95,8 +143,7 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
   const handleResumeUpload = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      // In a real implementation, you would upload this file to a server
-      // and get back a URL. For now, we'll create a local URL.
+      // Create a local URL for preview
       const fileUrl = URL.createObjectURL(file);
       
       setPageData({
@@ -111,8 +158,7 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
   const handleFoodHandlersCardUpload = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      // In a real implementation, you would upload this file to a server
-      // and get back a URL. For now, we'll create a local URL.
+      // Create a local URL for preview
       const fileUrl = URL.createObjectURL(file);
       
       setPageData({
@@ -124,23 +170,95 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
     }
   };
 
+  const validateForm = () => {
+    const errors = {};
+    
+    // Required validations
+    if (pageData.hasJob === null) {
+      errors.hasJob = 'Please select whether you currently have a job';
+    }
+    
+    if (pageData.hasJob === true) {
+      if (!pageData.workplace.trim()) {
+        errors.workplace = 'Please enter your workplace';
+      }
+      
+      if (!pageData.position.trim()) {
+        errors.position = 'Please enter your position';
+      }
+      
+      if (!pageData.workHours.trim()) {
+        errors.workHours = 'Please enter your work hours';
+      } else if (isNaN(pageData.workHours) || parseInt(pageData.workHours) < 0) {
+        errors.workHours = 'Please enter a valid number of hours';
+      }
+    }
+    
+    if (pageData.hasResume === null) {
+      errors.hasResume = 'Please select whether you have a resume';
+    }
+    
+    if (pageData.readyToWork === null) {
+      errors.readyToWork = 'Please select whether you are ready to work';
+    }
+    
+    if (pageData.readyToWork === false && !pageData.startDate) {
+      errors.startDate = 'Please select when you will be ready to work';
+    }
+    
+    if (pageData.interests.length === 0) {
+      errors.interests = 'Please select at least one interest';
+    }
+    
+    if (pageData.hasFoodHandlersCard === null) {
+      errors.hasFoodHandlersCard = 'Please select whether you have a food handlers card';
+    }
+    
+    if (!pageData.culinarySchoolYears.trim()) {
+      errors.culinarySchoolYears = 'Please enter years of culinary school';
+    } else if (isNaN(pageData.culinarySchoolYears) || parseInt(pageData.culinarySchoolYears) < 0) {
+      errors.culinarySchoolYears = 'Please enter a valid number of years';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleNext = () => {
+    // Validate form first
+    if (!validateForm()) {
+      return;
+    }
+    
+    // Convert readable interests to UUIDs
+    const interestUUIDs = pageData.interests.map(
+      interest => JOB_INTEREST_OPTIONS[interest] || interest
+    );
+    
+    // Format date to ISO string if it exists
+    const formattedStartDate = pageData.startDate instanceof Date && !isNaN(pageData.startDate)
+      ? pageData.startDate.toISOString().split('T')[0]
+      : null;
+    
     // Update the global profile data with this page's data
-    updateProfileData({
+    const success = updateProfileData({
       current_job: pageData.hasJob,
       current_employer: pageData.workplace,
       current_position: pageData.position,
       current_work_hours: parseInt(pageData.workHours) || 0,
       has_resume: pageData.hasResume,
       ready_to_work: pageData.readyToWork,
-      job_interests: pageData.interests,
+      start_date: formattedStartDate,
+      job_interests: interestUUIDs,
       food_handlers_card: pageData.hasFoodHandlersCard,
       culinary_class_years: parseInt(pageData.culinarySchoolYears) || 0,
       resume_url: pageData.resumeUrl,
       food_handlers_card_url: pageData.foodHandlersCardUrl
     });
     
-    onNext(); // Navigate to the next page
+    if (success) {
+      onNext(); // Navigate to the next page
+    }
   };
 
   if (error) {
@@ -249,7 +367,7 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
         {/* Currently have a job */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            Do You Currently Have A Job?
+            Do You Currently Have A Job? *
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
@@ -287,6 +405,9 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
               No
             </Button>
           </Box>
+          {formErrors.hasJob && (
+            <FormHelperText error>{formErrors.hasJob}</FormHelperText>
+          )}
         </Box>
 
         {/* Where do you work - only show if hasJob is true */}
@@ -294,13 +415,15 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
           <>
             <Box>
               <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-                Where Do You Work?
+                Where Do You Work? *
               </Typography>
               <TextField
                 fullWidth
                 value={pageData.workplace}
                 onChange={handleChange('workplace')}
                 variant="outlined"
+                error={!!formErrors.workplace}
+                helperText={formErrors.workplace}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -320,13 +443,15 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
             {/* Current position */}
             <Box>
               <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-                What Is Your Current Position?
+                What Is Your Current Position? *
               </Typography>
               <TextField
                 fullWidth
                 value={pageData.position}
                 onChange={handleChange('position')}
                 variant="outlined"
+                error={!!formErrors.position}
+                helperText={formErrors.position}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -346,17 +471,25 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
             {/* Work hours */}
             <Box>
               <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-                How Many Hours A Week Do You Work?
+                How Many Hours A Week Do You Work? *
               </Typography>
               <TextField
                 fullWidth
                 value={pageData.workHours}
                 onChange={handleChange('workHours')}
                 variant="outlined"
+                type="number"
+                error={!!formErrors.workHours}
+                helperText={formErrors.workHours}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
                       <AccessTime sx={{ color: '#6b7c93' }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      hours
                     </InputAdornment>
                   ),
                 }}
@@ -374,7 +507,7 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
         {/* Has resume */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            Do You Have A Resume?
+            Do You Have A Resume? *
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
@@ -412,6 +545,9 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
               No
             </Button>
           </Box>
+          {formErrors.hasResume && (
+            <FormHelperText error>{formErrors.hasResume}</FormHelperText>
+          )}
         </Box>
 
         {/* Upload resume - only show if hasResume is true */}
@@ -471,7 +607,7 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
         {/* Ready to work */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            Are You Ready To Work Now?
+            Are You Ready To Work Now? *
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
@@ -509,26 +645,67 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
               No
             </Button>
           </Box>
+          {formErrors.readyToWork && (
+            <FormHelperText error>{formErrors.readyToWork}</FormHelperText>
+          )}
         </Box>
+
+        {/* Start date - only show if not ready to work now */}
+        {pageData.readyToWork === false && (
+          <Box>
+            <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
+              When Will You Be Ready To Work? *
+            </Typography>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DatePicker
+                value={pageData.startDate}
+                onChange={handleDateChange}
+                minDate={new Date()} // Cannot select a date in the past
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    fullWidth
+                    error={!!formErrors.startDate}
+                    helperText={formErrors.startDate}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <DateRange sx={{ color: '#6b7c93' }} />
+                        </InputAdornment>
+                      ),
+                      ...params.InputProps
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        bgcolor: '#fff',
+                      }
+                    }}
+                  />
+                )}
+              />
+            </LocalizationProvider>
+          </Box>
+        )}
 
         {/* Interests */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            Select The Options That You Are Interested In
+            Select The Options That You Are Interested In *
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Button
               fullWidth
-              variant={pageData.interests.includes('culinary') ? "contained" : "outlined"}
-              onClick={() => handleInterestToggle('culinary')}
+              variant={pageData.interests.includes('Culinary') ? "contained" : "outlined"}
+              onClick={() => handleInterestToggle('Culinary')}
               sx={{
                 borderRadius: 2,
                 py: 1.5,
-                color: pageData.interests.includes('culinary') ? 'white' : '#42a5f5',
+                color: pageData.interests.includes('Culinary') ? 'white' : '#42a5f5',
                 borderColor: '#42a5f5',
                 '&:hover': {
                   borderColor: '#42a5f5',
-                  bgcolor: pageData.interests.includes('culinary') ? '#2196f3' : 'rgba(33, 150, 243, 0.04)',
+                  bgcolor: pageData.interests.includes('Culinary') ? '#2196f3' : 'rgba(33, 150, 243, 0.04)',
                 },
               }}
             >
@@ -536,28 +713,31 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
             </Button>
             <Button
               fullWidth
-              variant={pageData.interests.includes('baking') ? "contained" : "outlined"}
-              onClick={() => handleInterestToggle('baking')}
+              variant={pageData.interests.includes('Baking and Pastry') ? "contained" : "outlined"}
+              onClick={() => handleInterestToggle('Baking and Pastry')}
               sx={{
                 borderRadius: 2,
                 py: 1.5,
-                color: pageData.interests.includes('baking') ? 'white' : '#42a5f5',
+                color: pageData.interests.includes('Baking and Pastry') ? 'white' : '#42a5f5',
                 borderColor: '#42a5f5',
                 '&:hover': {
                   borderColor: '#42a5f5',
-                  bgcolor: pageData.interests.includes('baking') ? '#2196f3' : 'rgba(33, 150, 243, 0.04)',
+                  bgcolor: pageData.interests.includes('Baking and Pastry') ? '#2196f3' : 'rgba(33, 150, 243, 0.04)',
                 },
               }}
             >
               Baking & Pastry
             </Button>
           </Box>
+          {formErrors.interests && (
+            <FormHelperText error>{formErrors.interests}</FormHelperText>
+          )}
         </Box>
 
         {/* Food handlers card */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            Do You Have A Food Handlers Card?
+            Do You Have A Food Handlers Card? *
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
@@ -595,6 +775,9 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
               No
             </Button>
           </Box>
+          {formErrors.hasFoodHandlersCard && (
+            <FormHelperText error>{formErrors.hasFoodHandlersCard}</FormHelperText>
+          )}
         </Box>
 
         {/* Upload food handlers card - only show if hasFoodHandlersCard is true */}
@@ -654,17 +837,20 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
         {/* Culinary school years */}
         <Box>
           <Typography variant="body2" sx={{ mb: 0.5, color: '#6b7c93' }}>
-            How Many Years Of Culinary School Have You Attended?
+            How Many Years Of Culinary School Have You Attended? *
           </Typography>
           <TextField
             fullWidth
             value={pageData.culinarySchoolYears}
             onChange={handleChange('culinarySchoolYears')}
             variant="outlined"
+            type="number"
+            error={!!formErrors.culinarySchoolYears}
+            helperText={formErrors.culinarySchoolYears}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <KeyboardArrowDown sx={{ color: '#6b7c93' }} />
+                  years
                 </InputAdornment>
               ),
             }}
@@ -676,6 +862,8 @@ const ProfileSetupPage3 = ({ onBack, onNext }) => {
             }}
           />
         </Box>
+        
+        <FormHelperText>* Required fields</FormHelperText>
       </Box>
 
       {/* Navigation buttons */}
