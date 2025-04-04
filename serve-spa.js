@@ -8,6 +8,10 @@ app.use(express.static(path.join(__dirname, 'dist')));
 
 // Admin routes
 app.get('/admin', (req, res) => {
+  res.redirect('/login');
+});
+
+app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist/admin/index.html'));
 });
 

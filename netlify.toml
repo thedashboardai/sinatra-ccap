@@ -16,8 +16,13 @@
 # Application routing
 [[redirects]]
   from = "/admin"
-  to = "/admin/"
+  to = "/login"
   status = 301
+
+[[redirects]]
+  from = "/login"
+  to = "/admin/index.html"
+  status = 200
 
 [[redirects]]
   from = "/admin/*"
