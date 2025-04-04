@@ -1,36 +1,8 @@
 [build]
-  command = "npm run build:all"
   publish = "dist"
-  functions = "netlify/functions"
+  command = "npm run build:netlify"
 
-# Direct routes with specific paths
-[[redirects]]
-  from = "/admin"
-  to = "/admin/login"
-  status = 302
-
-[[redirects]]
-  from = "/admin/login"
-  to = "/admin/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/student"
-  to = "/student/index.html"
-  status = 200
-
-# Special redirect for the intake form
-[[redirects]]
-  from = "/intake"
-  to = "/admin/intake"
-  status = 200
-
-[[redirects]]
-  from = "/intake/*"
-  to = "/admin/intake/:splat"
-  status = 200
-
-# Asset handling for images and other static files
+# Static assets rewriting
 [[redirects]]
   from = "/admin/assets/*"
   to = "/admin/assets/:splat"
@@ -41,18 +13,37 @@
   to = "/student/images/:splat"
   status = 200
 
-# SPA fallbacks
+# Application routing
+[[redirects]]
+  from = "/admin"
+  to = "/admin/"
+  status = 301
+
 [[redirects]]
   from = "/admin/*"
   to = "/admin/index.html"
   status = 200
 
 [[redirects]]
+  from = "/student"
+  to = "/student/"
+  status = 301
+  
+[[redirects]]
   from = "/student/*"
   to = "/student/index.html"
   status = 200
 
-# Default fallback
+[[redirects]]
+  from = "/intake"
+  to = "/admin/index.html"
+  status = 200
+  
+[[redirects]]
+  from = "/intake/*"
+  to = "/admin/index.html"
+  status = 200
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

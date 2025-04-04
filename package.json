@@ -3,13 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build:all": "if exist dist rmdir /s /q dist && mkdir dist && npm run build:landing && npm run build:admin && npm run build:student && npm run copy:netlify",
-    "build:landing": "echo Building landing page... && xcopy /E /I /Y landing-page\\* dist\\",
-    "build:admin": "echo Building admin dashboard... && cd admin-dashboard && npm install --legacy-peer-deps && npm run build && mkdir ..\\dist\\admin && xcopy /E /I /Y dist\\* ..\\dist\\admin\\ && if not exist ..\\dist\\admin\\assets mkdir ..\\dist\\admin\\assets && xcopy /E /I /Y src\\assets\\* ..\\dist\\admin\\assets\\",
-    "build:student": "echo Building student dashboard... && cd student-dashboard && npm install --legacy-peer-deps && cross-env CI=false npm run build && mkdir ..\\dist\\student && xcopy /E /I /Y build\\* ..\\dist\\student\\ && if not exist ..\\dist\\student\\images mkdir ..\\dist\\student\\images && xcopy /E /I /Y public\\images\\* ..\\dist\\student\\images\\",
-    "copy:netlify": "echo Copying netlify.toml... && xcopy /Y netlify.toml dist\\"
+    "build:netlify": "npm run build:clean && npm run build:landing && npm run build:admin && npm run build:student && npm run create:redirects",
+    "build:clean": "rm -rf dist && mkdir -p dist dist/admin dist/student",
+    "build:landing": "echo 'Building landing page...' && cp -r landing-page/* dist/",
+    "build:admin": "echo 'Building admin dashboard...' && cd admin-dashboard && npm install --legacy-peer-deps && npm run build && cp -r dist/* ../dist/admin/ && mkdir -p ../dist/admin/assets && cp -r src/assets/* ../dist/admin/assets/",
+    "build:student": "echo 'Building student dashboard...' && cd student-dashboard && npm install --legacy-peer-deps && CI=false npm run build && cp -r build/* ../dist/student/",
+    "create:redirects": "echo 'Creating _redirects file...' && echo '# Static assets\n/admin/assets/*  /admin/assets/:splat   200\n/student/images/*  /student/images/:splat   200\n\n# Application routes\n/admin     /admin/    301\n/admin/*   /admin/index.html   200\n/student   /student/  301\n/student/* /student/index.html   200\n/intake    /admin/index.html   200\n/intake/*  /admin/index.html   200\n\n# Default fallback\n/*        /index.html   200' > dist/_redirects",
+    "serve": "node serve-spa.js"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3"
+    "cross-env": "^7.0.3",
+    "express": "^4.18.3"
   }
 }
