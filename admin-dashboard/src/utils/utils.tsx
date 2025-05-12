@@ -246,8 +246,8 @@ import {
   }
   
   // Google Sheets API configuration
-  export const API_KEY = "AIzaSyCnmoFIzLILbluaQwjQh0mKEFPZ_Pyw9c4";
-  export const SHEET_ID = "1NjE9NI9W7I4z2k8B83gXsHg2fzF65RFOoAAU3GoVG-A";
+  export const API_KEY = "AIzaSyBDqTZiRtlFOTnQV7xcoVmCiudsWcuDX18";
+  export const SHEET_ID = "1KqvJPGDUyevDqKtxHDj6Y5q_zgG2w-LxtryL0j_aJ28";
   export const RANGE = "Sheet1!A2:AZ";
   
   // Convert 12-hour time to 24-hour format
