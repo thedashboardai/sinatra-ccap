@@ -8,21 +8,24 @@
 export async function onRequest({ request, next }) {
   const url = new URL(request.url);
 
-  /* 1 Try to serve the file directly (fast‑path). */
+  // 1 Serve the asset if it exists
   const response = await next();
-  if (response.status !== 404) return response;   // asset exists, done
+  if (response.status !== 404) return response;
 
-  /* 2  Choose which index.html to serve. */
-  if (url.pathname.startsWith('/admin')) {
+  // 2 Route‑based SPA fallbacks
+  if (url.pathname.startsWith('/admin') || url.pathname === '/login') {
+    // /login should load the admin bundle (it will show the login screen inside React)
     return fetch('/admin/index.html', request);
   }
   if (url.pathname.startsWith('/student')) {
     return fetch('/student/index.html', request);
   }
   if (url.pathname.startsWith('/intake')) {
-    return fetch('/admin/index.html', request);   // intake shares admin code
+    // keep using the admin bundle – React route /intake will embed your Tally form
+    return fetch('/admin/index.html', request);
   }
 
-  /* 3  Default root SPA (landing page) */
+  // 3 Default landing page
   return fetch('/index.html', request);
 }
+
