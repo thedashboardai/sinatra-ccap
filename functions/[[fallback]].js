@@ -20,9 +20,9 @@ export async function onRequest({ request, next }) {
   if (url.pathname.startsWith('/student')) {
     return fetch('/student/index.html', request);
   }
-  if (url.pathname.startsWith('/intake')) {
-    // keep using the admin bundle – React route /intake will embed your Tally form
-    return fetch('/admin/index.html', request);
+  if (url.pathname === '/intake' || url.pathname.startsWith('/intake/')) {
+    // 301 = permanent; use 302 if you prefer temporary
+    return Response.redirect('https://tally.so/r/mYddDq', 301);
   }
 
   // 3 Default landing page
