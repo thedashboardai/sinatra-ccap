@@ -8,7 +8,7 @@
     "build:landing": "echo 'Building landing page...' && cp -r landing-page/* dist/",
     "build:admin": "echo 'Building admin dashboard...' && cd admin-dashboard && npm install --legacy-peer-deps && npm run build && cp -r dist/* ../dist/admin/ && mkdir -p ../dist/admin/assets && cp -r src/assets/* ../dist/admin/assets/",
     "build:student": "echo 'Building student dashboard...' && cd student-dashboard && npm install --legacy-peer-deps && CI=false npm run build && cp -r build/* ../dist/student/",
-    "create:redirects": "echo 'Creating _redirects file...' && echo '# Static assets\n/admin/assets/*  /admin/assets/:splat   200\n/student/images/*  /student/images/:splat   200\n\n# Application routes\n/admin     /admin/    301\n/admin/*   /admin/index.html   200\n/student   /student/  301\n/student/* /student/index.html   200\n/intake    /admin/index.html   200\n/intake/*  /admin/index.html   200\n\n# Default fallback\n/*        /index.html   200' > dist/_redirects",
+    "create:redirects": "echo 'Creating _redirects file...' && echo '# Static assets\n/admin/assets/*  /admin/assets/:splat   200\n/student/images/*  /student/images/:splat   200\n\n# Admin app\n/admin/index.html  /admin/index.html  200\n/admin/*  /admin/index.html  200!\n\n# Student app\n/student/index.html  /student/index.html  200\n/student/*  /student/index.html  200!\n\n# Intake route\n/intake/index.html  /admin/index.html  200\n/intake/*  /admin/index.html  200!\n\n# Default fallback\n/index.html  /index.html  200\n/*  /index.html  200!' > dist/_redirects",
     "serve": "node serve-spa.js"
   },
   "devDependencies": {
